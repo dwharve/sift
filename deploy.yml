@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sift
+  labels:
+    component: sift
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: sift
+  template:
+    metadata:
+      labels:
+        component: sift
+    spec:
+      containers:
+      - name: sift
+        image: dwharve/sift:1.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /data
+          name: images
+        ports:
+        - containerPort: 80
+          name: http
+      volumes:
+      - hostPath:
+          path: /data/images
+          type: Directory
+        name: images
+      nodeSelector:
+        sift: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sift
+  labels:
+    component: sift
+spec:
+  selector:
+    component: sift
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  type: LoadBalancer
+

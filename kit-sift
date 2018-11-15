@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if [ "$1" == "ls" ]; then
+  echo "$(curl sift.lan/ls 2>/dev/null)"
+  exit 0
+fi
+
+if [ "$1" == "remove" ]; then
+  RES="$(curl sift.lan/remove/$2 2>/dev/null)"
+  if [ "$RES" == "OK" ]; then
+    echo "Image removed"
+  elif [ "$RES" == "BAD" ]; then
+    echo "Unable to remove image"
+  else
+    echo "Image doesn't exist"
+  fi
+  exit 0
+fi
+
+if [ "$1" == "upload" ]; then
+  HASH="$(sha1sum $3 | awk '{print $1}' | tr -d '\n')"
+  RES="$(curl sift.lan/image/$2/$HASH 2>/dev/null)"
+  if [ "$RES" == "OK" ] || [ "$RES" == "BADNAME" ]; then
+    echo "Image exists"
+  else
+    scp $3 assessor@tfpserver1.lan:/data/images/$2
+    if [ "$(curl sift.lan/image/$2/$HASH 2>/dev/null)" == "OK" ]; then
+      echo "Upload successful"
+    else
+      echo "Bad upload"
+    fi
+  fi
+  exit 0
+fi
+
+if [ "$1" == "retry" ]; then
+  shift
+  curl sift.lan/delete/$(echo -n "$@" | base64) > /dev/null 2> /dev/null
+fi
+
+echo "$(curl sift.lan/cmd/$(echo -n "$@" | base64) 2>/dev/null)"
